@@ -31,17 +31,30 @@ export function scaledCanvas(renderer: Renderer, scale = 1) {
   ctx.drawImage(base, 0, 0, out.width, out.height);
   return out;
 }
-function blob(canvas: HTMLCanvasElement) {
+function blob(canvas: HTMLCanvasElement, type = "image/png", quality?: number) {
   return new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(
-      (b) => (b ? resolve(b) : reject(Error("Não foi possível criar PNG."))),
-      "image/png",
+      (b) =>
+        b && b.type === type
+          ? resolve(b)
+          : reject(Error(`Este navegador não gera ${type}.`)),
+      type,
+      quality,
     ),
   );
 }
-export async function png(r: Renderer) {
+const stills = {
+  PNG: ["image/png", "png"],
+  JPG: ["image/jpeg", "jpg"],
+  WebP: ["image/webp", "webp"],
+} as const;
+export type StillFormat = keyof typeof stills;
+export async function image(r: Renderer, format: StillFormat = "PNG") {
+  const [type, ext] = stills[format];
   r.render(r.time, true);
-  download(await blob(scaledCanvas(r, r.state.exportScale)), "dither-lab.png");
+  const canvas = scaledCanvas(r, r.state.exportScale);
+  // ponytail: dithered pixels are sharp edges; high quality keeps JPG artifacts low.
+  download(await blob(canvas, type, 0.95), `dither-lab.${ext}`);
 }
 const hex = (data: Uint8Array, i: number) =>
   "#" +
@@ -154,7 +167,7 @@ export async function standaloneHTML(r: Renderer, mediaData: string | null) {
 }
 export async function animation(
   r: Renderer,
-  format: "GIF" | "ZIP" | "WebM",
+  format: "GIF" | "ZIP" | "WebM" | "MP4",
   onProgress: (v: number) => void,
   signal: AbortSignal,
 ) {
@@ -193,17 +206,20 @@ export async function animation(
   };
   let stream: MediaStream | undefined, recorder: MediaRecorder | undefined;
   try {
-    if (format === "WebM") {
+    if (format === "WebM" || format === "MP4") {
       if (!r.canvas.captureStream || typeof MediaRecorder === "undefined")
         throw Error(
-          "Gravação WebM indisponível neste navegador. Use GIF ou ZIP.",
+          `Gravação ${format} indisponível neste navegador. Use GIF ou ZIP.`,
         );
-      const mime = [
-        "video/webm;codecs=vp9",
-        "video/webm;codecs=vp8",
-        "video/webm",
-      ].find((m) => MediaRecorder.isTypeSupported(m));
-      if (!mime) throw Error("Este navegador não grava WebM. Use GIF ou ZIP.");
+      const mime = (
+        format === "MP4"
+          ? ["video/mp4;codecs=avc1", "video/mp4"]
+          : ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"]
+      ).find((m) => MediaRecorder.isTypeSupported(m));
+      if (!mime)
+        throw Error(
+          `Este navegador não grava ${format}. Tente ${format === "MP4" ? "WebM" : "MP4"}, GIF ou ZIP.`,
+        );
       stream = r.canvas.captureStream(s.fps);
       const chunks: Blob[] = [];
       recorder = new MediaRecorder(stream, { mimeType: mime });
@@ -229,7 +245,7 @@ export async function animation(
         );
       }
       recorder.stop();
-      download(await done, "dither-lab.webm");
+      download(await done, `dither-lab.${format === "MP4" ? "mp4" : "webm"}`);
     } else {
       if (frames * r.canvas.width * r.canvas.height > 400_000_000)
         throw Error(

@@ -151,7 +151,7 @@ export function controls(container: HTMLElement, s: State, a: Actions) {
   bind(render, "aspect", "Proporção", {
     options: { "3:2": 1.5, "16:9": 16 / 9, "1:1": 1, "9:16": 9 / 16 },
   });
-  bind(render, "exportScale", "Escala PNG", {
+  bind(render, "exportScale", "Escala imagem", {
     options: { "1×": 1, "2×": 2, "4×": 4 },
   });
   bind(render, "svgMode", "SVG", { options: options(["Pixel", "Halftone"]) });
@@ -161,7 +161,17 @@ export function controls(container: HTMLElement, s: State, a: Actions) {
   });
   const exports = document.createElement("div");
   exports.className = "export-grid";
-  for (const format of ["PNG", "SVG", "WebM", "GIF", "ZIP", "HTML"]) {
+  for (const format of [
+    "PNG",
+    "JPG",
+    "WebP",
+    "SVG",
+    "MP4",
+    "WebM",
+    "GIF",
+    "ZIP",
+    "HTML",
+  ]) {
     const b = document.createElement("button");
     b.textContent = format === "HTML" ? "Código HTML" : format;
     b.onclick = () => a.export(format);

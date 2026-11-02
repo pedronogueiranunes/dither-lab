@@ -10,7 +10,7 @@ import {
   cpuAlgorithms,
   type State,
 } from "./state";
-import { download, png, svg, standaloneHTML, animation } from "./export";
+import { download, image, svg, standaloneHTML, animation } from "./export";
 layout();
 const $ = <T extends HTMLElement>(id: string) =>
   document.getElementById(id) as T;
@@ -284,7 +284,8 @@ async function exportAs(format: string) {
   const oldPaused = state.paused;
   controller = new AbortController();
   try {
-    if (format === "PNG") await png(renderer);
+    if (format === "PNG" || format === "JPG" || format === "WebP")
+      await image(renderer, format);
     else if (format === "SVG") {
       const n = svg(renderer);
       if (n) notice(`SVG exportado · ${n.toLocaleString("pt-BR")} elementos.`);
@@ -293,7 +294,7 @@ async function exportAs(format: string) {
       $("progress").hidden = false;
       await animation(
         renderer,
-        format as "GIF" | "ZIP" | "WebM",
+        format as "GIF" | "ZIP" | "WebM" | "MP4",
         (v) => {
           $<HTMLProgressElement>("progress").value = v;
           $("progress-label").textContent =

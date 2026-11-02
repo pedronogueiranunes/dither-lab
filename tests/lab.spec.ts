@@ -68,12 +68,21 @@ test("GPU, CPU worker, compilation recovery, responsive layout", async ({
   ).toBe(true);
   expect(errors).toEqual([]);
 });
-test("exports PNG, both SVG modes, GIF, ZIP, WebM and offline HTML", async ({
+test("exports PNG, JPG, WebP, both SVG modes, GIF, ZIP, WebM and offline HTML", async ({
   page,
   context,
 }) => {
   await loadState(page, { width: 160, duration: 1, fps: 12, paused: true });
-  for (const format of ["PNG", "SVG", "GIF", "ZIP", "WebM", "Código HTML"]) {
+  for (const format of [
+    "PNG",
+    "JPG",
+    "WebP",
+    "SVG",
+    "GIF",
+    "ZIP",
+    "WebM",
+    "Código HTML",
+  ]) {
     const event = page.waitForEvent("download");
     await page
       .locator(".export-grid button")
@@ -85,6 +94,9 @@ test("exports PNG, both SVG modes, GIF, ZIP, WebM and offline HTML", async ({
     const data = await readFile(path!);
     expect(data.length).toBeGreaterThan(50);
     if (format === "PNG") expect(data.subarray(1, 4).toString()).toBe("PNG");
+    if (format === "JPG")
+      expect([...data.subarray(0, 2)]).toEqual([0xff, 0xd8]);
+    if (format === "WebP") expect(data.subarray(8, 12).toString()).toBe("WEBP");
     if (format === "GIF")
       expect(data.subarray(0, 6).toString()).toMatch(/GIF8[79]a/);
     if (format === "ZIP") expect(data.subarray(0, 2).toString()).toBe("PK");
