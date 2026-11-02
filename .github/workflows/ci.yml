@@ -1,5 +1,11 @@
-name: Check Dither Lab
-on: [push, pull_request]
+name: Check & deploy Dither Lab
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -19,3 +25,17 @@ jobs:
         with:
           name: browser-test-results
           path: test-results/
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        with:
+          path: dist
+  deploy:
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

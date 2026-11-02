@@ -1,5 +1,53 @@
+/* Same type roles as pedronogueira portfolio. Licenses in src/fonts/licenses. */
+@font-face {
+  font-family: "Manrope";
+  src: url("./fonts/manrope-latin-700-normal.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Manrope";
+  src: url("./fonts/manrope-latin-800-normal.woff2") format("woff2");
+  font-weight: 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  src: url("./fonts/hanken-grotesk-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  src: url("./fonts/hanken-grotesk-latin-500-normal.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Departure Mono";
+  src: url("./fonts/departure-mono-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("./fonts/geist-mono-latin-500-normal.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Silkscreen";
+  src: url("./fonts/silkscreen-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
 :root {
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-display: "Manrope", sans-serif;
+  --font-body: "Hanken Grotesk", sans-serif;
+  --font-label: "Silkscreen", monospace;
+  --font-mono: "Departure Mono", "SFMono-Regular", Consolas, monospace;
+  --font-code: "Geist Mono", "SFMono-Regular", Consolas, monospace;
+  font-family: var(--font-mono);
   color: #e6e8dd;
   background: #171917;
   font-size: 12px;
@@ -569,4 +617,26 @@ input[type="color"] {
   * {
     transition: none !important;
   }
+}
+
+/* Type roles: display / body / label / code. Controls inherit Departure Mono. */
+.wordmark,
+h1 {
+  font-family: var(--font-display);
+}
+.panel-heading p,
+.header-note,
+.editor-tip {
+  font-family: var(--font-body);
+}
+.tp-fldv_t,
+.tag,
+.panel-note {
+  font-family: var(--font-label);
+  font-weight: 400 !important;
+}
+textarea,
+.line-numbers,
+#errors {
+  font-family: var(--font-code);
 }
