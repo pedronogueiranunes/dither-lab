@@ -1,0 +1,33 @@
+{
+  "name": "dither-lab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "test:browser": "playwright test",
+    "predev": "node scripts/standalone.mjs",
+    "prebuild": "node scripts/standalone.mjs",
+    "format": "prettier --write src tests scripts *.ts *.json index.html"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2",
+    "gifenc": "^1.0.3",
+    "tweakpane": "^4.0.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.51.0",
+    "@tweakpane/core": "^2.0.5",
+    "esbuild": "^0.28.2",
+    "prettier": "^3.9.10",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0",
+    "vitest": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

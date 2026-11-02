@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-02T17:41:38.980496+00:00",
+  "title": "Design System: Dither Lab",
+  "extensions": {
+    "shadows": [
+      {
+        "name": "notice",
+        "value": "0 8px 24px #0005",
+        "purpose": "Transient notice only; workspace surfaces are flat."
+      }
+    ],
+    "motion": [
+      {
+        "name": "button-background",
+        "value": "background 0.14s",
+        "purpose": "Button hover; disabled under prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide",
+        "value": "1600px"
+      },
+      {
+        "name": "compact",
+        "value": "1000px"
+      },
+      {
+        "name": "stacked",
+        "value": "720px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Compact olive action used for pause and export formats.",
+      "html": "<button class=\"ds-button\">Pausar</button>",
+      "css": ".ds-button{font-family:\"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace;font-size:12px;border:1px solid #42493b;border-radius:4px;padding:8px 11px;cursor:pointer;transition:background .14s;background:#292f25;color:var(--ink,#e6e8dd)}.ds-button:hover{background:#3d4733}.ds-button:focus-visible{outline:2px solid var(--accent,#d3ef8d);outline-offset:3px}.ds-button:disabled{opacity:.4;cursor:default}@media(prefers-reduced-motion:reduce){.ds-button{transition:none}}"
+    },
+    {
+      "name": "Primary export button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Lime PNG export action with a shortcut hint.",
+      "html": "<button class=\"ds-primary\">Exportar PNG <kbd class=\"ds-key\">S</kbd></button>",
+      "css": ".ds-primary{font-family:\"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace;font-size:12px;border:1px solid #42493b;border-radius:4px;padding:8px 11px;cursor:pointer;transition:background .14s;background:var(--accent,#d3ef8d);color:#202919;border-color:var(--accent,#d3ef8d);font-weight:700}.ds-primary:hover{background:#e4f7b5}.ds-primary:focus-visible{outline:2px solid var(--accent,#d3ef8d);outline-offset:3px}.ds-primary:disabled{opacity:.4;cursor:default}.ds-key{font-size:10px;font-weight:400;color:#29341b;border:1px solid #8fa95e;border-radius:3px;padding:2px 4px;margin-left:4px}@media(prefers-reduced-motion:reduce){.ds-primary{transition:none}}"
+    },
+    {
+      "name": "Quiet action",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Low-emphasis editor or header action.",
+      "html": "<button class=\"ds-quiet\">Copiar GLSL</button>",
+      "css": ".ds-quiet{font-family:\"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace;font-size:12px;border:1px solid #42493b;border-radius:4px;padding:8px 11px;cursor:pointer;transition:background .14s;border:0;background:transparent;color:#bac2af;padding:7px}.ds-quiet:hover{background:transparent}.ds-quiet:focus-visible{outline:2px solid var(--accent,#d3ef8d);outline-offset:3px}.ds-quiet:disabled{opacity:.4;cursor:default}@media(prefers-reduced-motion:reduce){.ds-quiet{transition:none}}"
+    },
+    {
+      "name": "Engine tag",
+      "kind": "chip",
+      "refersTo": "engine-tag",
+      "description": "Noninteractive GPU/CPU status label.",
+      "html": "<span class=\"ds-tag\">GPU</span>",
+      "css": ".ds-tag{font-family:\"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace;font-size:9px;color:var(--accent,#d3ef8d);border:1px solid #566440;padding:3px 5px;border-radius:3px}"
+    },
+    {
+      "name": "Palette swatch",
+      "kind": "input",
+      "refersTo": "palette-input",
+      "description": "Native color field used in the editable palette.",
+      "html": "<input class=\"ds-swatch\" type=\"color\" value=\"#d3ef8d\" aria-label=\"Cor 1\">",
+      "css": ".ds-swatch{width:27px;height:28px;padding:0;border:1px solid #5a634f;border-radius:3px;background:transparent;cursor:pointer}.ds-swatch:focus-visible{outline:2px solid var(--accent,#d3ef8d);outline-offset:3px}"
+    },
+    {
+      "name": "Shader editor",
+      "kind": "custom",
+      "refersTo": "shader-editor",
+      "description": "Editable GLSL surface with aligned gutter and container focus.",
+      "html": "<section class=\"ds-editor\" aria-label=\"Editor de fragment shader\"><div class=\"ds-editor-bar\">Fragment shader <span class=\"ds-file\">custom.frag</span></div><div class=\"ds-editor-body\"><div class=\"ds-gutter\" aria-hidden=\"true\">1<br>2<br>3</div><textarea class=\"ds-code\" spellcheck=\"false\" aria-label=\"Código GLSL\">void main() {\n  fragColor = vec4(1.0);\n}</textarea></div></section>",
+      "css": ".ds-editor{font-family:\"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace;border:1px solid var(--line,#343931);border-radius:5px;overflow:hidden;background:#1b1e19}.ds-editor:focus-within{border-color:#7d925e}.ds-editor-bar{padding:8px 12px;border-bottom:1px solid var(--line,#343931);font-size:11px;color:var(--ink,#e6e8dd)}.ds-file{color:#939e87;font-size:10px;margin-left:12px}.ds-editor-body{display:flex;height:210px}.ds-gutter{width:42px;flex-shrink:0;color:#748166;text-align:right;padding:16px 10px;font-size:11px;line-height:19px;overflow:hidden;background:#191c17;user-select:none;box-sizing:border-box}.ds-code{font-family:inherit;display:block;resize:vertical;min-width:0;width:100%;height:100%;box-sizing:border-box;border:0;outline:none;background:transparent;color:#cbdab7;caret-color:var(--accent,#d3ef8d);font-size:11px;line-height:19px;tab-size:2;padding:16px 12px;white-space:pre;overflow:auto}.ds-code:focus-visible{outline:none}"
+    }
+  ],
+  "narrative": {
+    "overview": "Dither Lab is a compact, minimal dark workspace with monospace typography throughout. Its visual character comes from near-black olive surfaces, pale text, restrained lime feedback and the pixelated image itself. Portuguese is the interface language.\n\nThe implemented workspace keeps the preview on the left, controls on the right and GLSL immediately below the preview. Density serves experimentation: small labels, grouped controls and visible code leave room for the canvas. This documents the implemented system in `src/style.css` and `src/ui.ts`; product commitments are recorded in `PRODUCT.md`.\n",
+    "keyCharacteristics": [
+      "Dark olive surfaces and pale monospace text.",
+      "Lime for the main export action, status and focus feedback.",
+      "Compact controls, shallow corners and fine boundaries.",
+      "Pixelated preview with a directly editable shader beneath it."
+    ],
+    "rules": [],
+    "dos": [
+      "**Do** preserve the dark minimal monospace identity and Portuguese interface copy.",
+      "**Do** keep the desktop canvas on the left, controls on the right and code below the canvas; stack at the implemented mobile breakpoint.",
+      "**Do** reuse the existing lime focus, primary action and status treatments.",
+      "**Do** preserve crisp pixel rendering, readable code alignment and labeled native controls.",
+      "**Do** honor the reduced-motion preference."
+    ],
+    "donts": [
+      "**Don't** introduce decorative display fonts or a competing control style.",
+      "**Don't** add general-purpose card shadows to the flat workspace.",
+      "**Don't** replace real editable code or the canvas with decorative mock content.",
+      "**Don't** turn noninteractive status tags into navigation without a product requirement."
+    ]
+  }
+}
