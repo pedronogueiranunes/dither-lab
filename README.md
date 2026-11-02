@@ -24,7 +24,8 @@ Espaço: pausar/reproduzir. **S**: PNG. **R**: gravar WebM (novamente para cance
 - **PNG:** resolução interna com escala 1×/2×/4× e nearest-neighbor.
 - **SVG Pixel:** runs horizontais de mesma cor viram retângulos. Aviso acima de 200 mil elementos.
 - **SVG Halftone:** círculos/linhas/cruzes reais com cobertura da luminância pré-processada; usa primeira/última cor como tinta/papel. Para corresponder ao preview, use halftone mono, força 100% e duas cores ordenadas de escuro para claro.
-- **WebM:** `captureStream` + MediaRecorder, com duração/FPS configuráveis. Depende de suporte a WebM; oferecemos erro e GIF/ZIP quando indisponível.
+- **JPG / WebP:** mesma escala da imagem PNG, via `canvas.toBlob`.
+- **MP4 / WebM:** `captureStream` + MediaRecorder, com duração/FPS configuráveis. Depende de suporte a WebM; oferecemos erro e GIF/ZIP quando indisponível.
 - **GIF / ZIP:** quadros determinísticos, avançando `u_time` manualmente e buscando a posição correspondente de vídeos. GIF tem precisão temporal de centésimos de segundo. ZIP contém PNGs numerados. Uma proteção limita o total a 400 milhões de pixels por exportação. Webcam ao vivo usa WebM.
 - **Código HTML:** um arquivo autossuficiente com renderer, algoritmos, parâmetros, shader e mídia incorporada; abre via `file://`, sem rede. Webcam é incorporada como imagem do momento. Preserva pausa/play do projeto. A difusão CPU usa a mesma implementação sequencial nesse HTML.
 
