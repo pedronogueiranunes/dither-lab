@@ -1,6 +1,7 @@
 import { GIFEncoder, applyPalette } from "gifenc";
 import { zipSync } from "fflate";
 import type { Renderer } from "./renderer";
+import { t } from "./i18n";
 import standalone from "./standalone.generated.txt?raw";
 export function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob),
@@ -37,7 +38,7 @@ function blob(canvas: HTMLCanvasElement, type = "image/png", quality?: number) {
       (b) =>
         b && b.type === type
           ? resolve(b)
-          : reject(Error(`Este navegador não gera ${type}.`)),
+          : reject(Error(t("Este navegador não gera {0}.", type))),
       type,
       quality,
     ),
@@ -56,6 +57,31 @@ export async function image(r: Renderer, format: StillFormat = "PNG") {
   // ponytail: dithered pixels are sharp edges; high quality keeps JPG artifacts low.
   download(await blob(canvas, type, 0.95), `dither-lab.${ext}`);
 }
+export const wallpapers = {
+  Phone: [1179, 2556],
+  Desktop: [3840, 2160],
+} as const;
+export type Wallpaper = keyof typeof wallpapers;
+/** Renders near the preview width, then upscales by an integer factor so dither dots stay crisp. */
+export async function wallpaper(r: Renderer, kind: Wallpaper) {
+  const [W, H] = wallpapers[kind],
+    s = r.state,
+    { width, aspect } = s,
+    k = Math.max(1, Math.round(W / width));
+  s.width = Math.ceil(W / k);
+  s.aspect = s.width / Math.ceil(H / k);
+  try {
+    r.render(r.time, true);
+    const out = document.createElement("canvas");
+    out.width = W;
+    out.height = H;
+    out.getContext("2d")!.drawImage(scaledCanvas(r, k), 0, 0); // crops the ceil() overflow
+    download(await blob(out), `dither-lab-${kind.toLowerCase()}-${W}x${H}.png`);
+  } finally {
+    s.width = width;
+    s.aspect = aspect;
+  }
+}
 const hex = (data: Uint8Array, i: number) =>
   "#" +
   [0, 1, 2].map((c) => data[i + c].toString(16).padStart(2, "0")).join("");
@@ -69,7 +95,9 @@ export function svg(r: Renderer) {
     if (
       nodes.length === 200000 &&
       !confirm(
-        "Este SVG ultrapassou 200 mil elementos e pode ficar pesado. Continuar?",
+        t(
+          "Este SVG ultrapassou 200 mil elementos e pode ficar pesado. Continuar?",
+        ),
       )
     ) {
       throw new DOMException("Exportação SVG cancelada", "AbortError");
@@ -181,16 +209,16 @@ export async function animation(
     if (signal.aborted)
       throw new DOMException("Exportação cancelada", "AbortError");
   };
-  const seek = async (t: number) => {
+  const seek = async (at: number) => {
     if (!media || !Number.isFinite(media.duration) || s.source === "Webcam")
       return;
     media.pause();
-    const target = (mediaTime + t) % media.duration;
+    const target = (mediaTime + at) % media.duration;
     if (Math.abs(media.currentTime - target) < 0.001) return;
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         cleanup();
-        reject(Error("O vídeo não respondeu ao avanço de quadro."));
+        reject(Error(t("O vídeo não respondeu ao avanço de quadro.")));
       }, 8000);
       function cleanup() {
         clearTimeout(timeout);
@@ -209,7 +237,10 @@ export async function animation(
     if (format === "WebM" || format === "MP4") {
       if (!r.canvas.captureStream || typeof MediaRecorder === "undefined")
         throw Error(
-          `Gravação ${format} indisponível neste navegador. Use GIF ou ZIP.`,
+          t(
+            "Gravação {0} indisponível neste navegador. Use GIF ou ZIP.",
+            format,
+          ),
         );
       const mime = (
         format === "MP4"
@@ -218,7 +249,11 @@ export async function animation(
       ).find((m) => MediaRecorder.isTypeSupported(m));
       if (!mime)
         throw Error(
-          `Este navegador não grava ${format}. Tente ${format === "MP4" ? "WebM" : "MP4"}, GIF ou ZIP.`,
+          t(
+            "Este navegador não grava {0}. Tente {1}, GIF ou ZIP.",
+            format,
+            format === "MP4" ? "WebM" : "MP4",
+          ),
         );
       stream = r.canvas.captureStream(s.fps);
       const chunks: Blob[] = [];
@@ -227,7 +262,7 @@ export async function animation(
         recorder!.ondataavailable = (e) => {
           if (e.data.size) chunks.push(e.data);
         };
-        recorder!.onerror = () => reject(Error("A gravação falhou."));
+        recorder!.onerror = () => reject(Error(t("A gravação falhou.")));
         recorder!.onstop = () => resolve(new Blob(chunks, { type: mime }));
       });
       recorder.start();
@@ -249,11 +284,15 @@ export async function animation(
     } else {
       if (frames * r.canvas.width * r.canvas.height > 400_000_000)
         throw Error(
-          "Muitos pixels para exportar na memória. Reduza a resolução, duração ou FPS.",
+          t(
+            "Muitos pixels para exportar na memória. Reduza a resolução, duração ou FPS.",
+          ),
         );
       if (s.source === "Webcam")
         throw Error(
-          "Para animação determinística, use vídeo, imagem, gerador ou shader. A webcam pode ser gravada em WebM.",
+          t(
+            "Para animação determinística, use vídeo, imagem, gerador ou shader. A webcam pode ser gravada em WebM.",
+          ),
         );
       const gif = format === "GIF" ? GIFEncoder() : null,
         files: Record<string, Uint8Array> = {},

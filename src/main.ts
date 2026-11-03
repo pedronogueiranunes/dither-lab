@@ -7,11 +7,22 @@ import {
   validate,
   encode,
   decode,
-  cpuAlgorithms,
   type State,
 } from "./state";
-import { download, image, svg, standaloneHTML, animation } from "./export";
+import {
+  download,
+  image,
+  svg,
+  standaloneHTML,
+  animation,
+  wallpaper,
+  wallpapers,
+  type Wallpaper,
+} from "./export";
+import { t, lang, setLang, translateDom, type Lang } from "./i18n";
 layout();
+setLang(lang);
+translateDom();
 const $ = <T extends HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 let state: State = structuredClone(defaults),
@@ -34,14 +45,13 @@ function notice(text: string) {
 try {
   if (location.hash) state = decode(location.hash.slice(1));
 } catch {
-  notice("O link contém um preset inválido. Abrimos o preset padrão.");
+  notice(t("O link contém um preset inválido. Abrimos o preset padrão."));
 }
 const code = $<HTMLTextAreaElement>("code");
 try {
   renderer = new Renderer($<HTMLCanvasElement>("canvas"), state);
 } catch (e) {
   notice(String(e));
-  $("compile-status").textContent = "WebGL indisponível";
   throw e;
 }
 function updateLines() {
@@ -55,28 +65,20 @@ function compile() {
     renderer.compile(code.value);
     state.code = code.value;
     $("errors").hidden = true;
-    $("compile-status").textContent = "Compilado";
-    $("compile-status").style.color = "";
   } catch (e) {
-    $("errors").textContent =
-      String(e) +
-      "\nO último shader válido continua rodando. Com o cabeçalho automático, a linha do corpo começa na linha 9.";
+    // ponytail: last valid shader keeps running; body line N = error line N+8.
+    $("errors").textContent = String(e);
     $("errors").hidden = false;
-    $("compile-status").textContent = "Erro no shader";
-    $("compile-status").style.color = "#ffb4a5";
   }
   changed();
 }
 function changed() {
   renderer.state = state;
-  $("effect-label").textContent = state.algorithm;
-  $("engine").textContent = cpuAlgorithms.includes(state.algorithm as any)
-    ? "CPU / WORKER"
-    : "GPU";
-  $("play").textContent = state.paused ? "Reproduzir" : "Pausar";
+  $("editor").hidden = state.source !== "Shader";
+  $("play").textContent = t(state.paused ? "Reproduzir" : "Pausar");
   $("play").setAttribute(
     "aria-label",
-    state.paused ? "Reproduzir animação" : "Pausar animação",
+    t(state.paused ? "Reproduzir animação" : "Pausar animação"),
   );
   $<HTMLInputElement>("compare").value = String(state.compare);
   if (!exporting) renderer.render(time);
@@ -103,7 +105,7 @@ async function source() {
     const token = sourceToken;
     try {
       if (!navigator.mediaDevices?.getUserMedia)
-        throw Error("A webcam precisa de HTTPS ou localhost.");
+        throw Error(t("A webcam precisa de HTTPS ou localhost."));
       const camera = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: false,
@@ -121,7 +123,7 @@ async function source() {
       if (state.paused) video.pause();
       renderer.media = video;
     } catch (e) {
-      notice(`Não foi possível abrir a webcam: ${String(e)}`);
+      notice(t("Não foi possível abrir a webcam: {0}", e));
       state.source = "Procedural";
       ui.refresh();
     }
@@ -130,7 +132,7 @@ async function source() {
       !renderer.media ||
       (state.source === "Vídeo") !== renderer.media instanceof HTMLVideoElement
     ) {
-      notice("Abra um arquivo ou arraste para o canvas.");
+      notice(t("Abra um arquivo ou arraste para o canvas."));
       $("media-file").click();
     }
   } else {
@@ -139,8 +141,16 @@ async function source() {
   if (token <= sourceToken) changed();
 }
 async function loadMedia(file: File) {
+  if (file.type === "application/json" || file.name.endsWith(".json")) {
+    try {
+      await apply(validate(JSON.parse(await file.text())));
+    } catch (e) {
+      notice(t("Preset inválido: {0}", e));
+    }
+    return;
+  }
   if (!/^image\//.test(file.type) && !/^video\//.test(file.type)) {
-    notice("Escolha um arquivo de imagem ou vídeo.");
+    notice(t("Use uma imagem, um vídeo ou um preset JSON."));
     return;
   }
   cleanupMedia();
@@ -155,7 +165,8 @@ async function loadMedia(file: File) {
       video.playsInline = true;
       await new Promise<void>((resolve, reject) => {
         video.onloadeddata = () => resolve();
-        video.onerror = () => reject(Error("Formato de vídeo não suportado"));
+        video.onerror = () =>
+          reject(Error(t("Formato de vídeo não suportado")));
       });
       if (token !== sourceToken) return;
       await video.play();
@@ -173,14 +184,13 @@ async function loadMedia(file: File) {
     const loadedData = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result));
-      reader.onerror = () => reject(Error("Falha ao ler arquivo"));
+      reader.onerror = () => reject(Error(t("Falha ao ler arquivo")));
       reader.readAsDataURL(file);
     });
     if (token !== sourceToken) return;
     mediaData = loadedData;
     ui.refresh();
     changed();
-    notice(`${file.name} carregado. Seu arquivo fica neste navegador.`);
   } catch (e) {
     if (token === sourceToken) {
       cleanupMedia();
@@ -194,7 +204,7 @@ async function apply(next: State) {
   try {
     renderer.compile(next.code);
   } catch (e) {
-    notice(`Preset não aplicado. ${String(e)}`);
+    notice(t("Preset não aplicado. {0}", e));
     return;
   }
   cleanupMedia();
@@ -207,7 +217,9 @@ async function apply(next: State) {
   if (["Imagem", "Vídeo"].includes(state.source)) {
     state.source = "Procedural";
     notice(
-      "O preset guarda parâmetros. Reabra o arquivo local para usar a fonte original.",
+      t(
+        "O preset guarda parâmetros. Reabra o arquivo local para usar a fonte original.",
+      ),
     );
     ui.refresh();
   } else if (state.source === "Webcam") await source();
@@ -218,9 +230,9 @@ async function share() {
     const hash = encode(state);
     history.replaceState(null, "", "#" + hash);
     await navigator.clipboard.writeText(location.href);
-    notice("Link do preset copiado. Arquivos locais não são incluídos.");
+    notice(t("Link copiado."));
   } catch (e) {
-    notice(`Não foi possível copiar o link: ${String(e)}`);
+    notice(t("Não foi possível copiar o link: {0}", e));
   }
 }
 function buildUI() {
@@ -229,55 +241,13 @@ function buildUI() {
     source: () => void source(),
     upload: () => $("media-file").click(),
     preset: (name) => void apply(preset(name)),
-    save: () => {
-      const name = prompt("Nome para o preset", "Meu preset");
-      if (!name?.trim()) return;
-      try {
-        const saved = JSON.parse(
-          localStorage.getItem("dither-presets") || "{}",
-        );
-        saved[name] = state;
-        localStorage.setItem("dither-presets", JSON.stringify(saved));
-        notice("Preset salvo neste navegador.");
-      } catch {
-        notice("Não foi possível salvar. Exporte o preset em JSON.");
-      }
-    },
-    load: () => {
-      try {
-        const saved = JSON.parse(
-            localStorage.getItem("dither-presets") || "{}",
-          ),
-          names = Object.keys(saved);
-        if (!names.length) {
-          notice("Você ainda não salvou um preset.");
-          return;
-        }
-        const name = prompt(
-          `Qual preset carregar?\n${names.join("\n")}`,
-          names[0],
-        );
-        if (name && saved[name]) void apply(validate(saved[name]));
-      } catch (e) {
-        notice(String(e));
-      }
-    },
-    import: () => $("preset-file").click(),
-    json: () =>
-      download(
-        new Blob([JSON.stringify(state, null, 2)], {
-          type: "application/json",
-        }),
-        "dither-preset.json",
-      ),
-    share: () => void share(),
     export: (format) => void exportAs(format),
   });
 }
 let controller: AbortController | null = null;
 async function exportAs(format: string) {
   if (exporting) {
-    notice("Aguarde a exportação atual ou cancele.");
+    notice(t("Aguarde a exportação atual ou cancele."));
     return;
   }
   exporting = true;
@@ -288,8 +258,23 @@ async function exportAs(format: string) {
       await image(renderer, format);
     else if (format === "SVG") {
       const n = svg(renderer);
-      if (n) notice(`SVG exportado · ${n.toLocaleString("pt-BR")} elementos.`);
+      if (n)
+        notice(
+          t(
+            "SVG exportado · {0} elementos.",
+            n.toLocaleString(lang === "pt" ? "pt-BR" : "en"),
+          ),
+        );
     } else if (format === "HTML") await standaloneHTML(renderer, mediaData);
+    else if (format in wallpapers)
+      await wallpaper(renderer, format as Wallpaper);
+    else if (format === "JSON")
+      download(
+        new Blob([JSON.stringify(state, null, 2)], {
+          type: "application/json",
+        }),
+        "dither-preset.json",
+      );
     else {
       $("progress").hidden = false;
       await animation(
@@ -302,12 +287,12 @@ async function exportAs(format: string) {
         },
         controller.signal,
       );
-      notice(`${format} exportado.`);
+      notice(t("{0} exportado.", format));
     }
   } catch (e) {
     notice(
       e instanceof DOMException && e.name === "AbortError"
-        ? "Exportação cancelada."
+        ? t("Exportação cancelada.")
         : String(e),
     );
   } finally {
@@ -320,9 +305,25 @@ async function exportAs(format: string) {
   }
 }
 $("cancel").onclick = () => controller?.abort();
-$("png").onclick = () => void exportAs("PNG");
 $("share").onclick = () => void share();
-$("compile").onclick = compile;
+const syncLang = () =>
+  document
+    .querySelectorAll<HTMLElement>("[data-lang]")
+    .forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.dataset.lang === lang)),
+    );
+document.querySelectorAll<HTMLElement>("[data-lang]").forEach(
+  (b) =>
+    (b.onclick = () => {
+      setLang(b.dataset.lang as Lang);
+      translateDom();
+      syncLang();
+      ui.dispose();
+      buildUI();
+      changed();
+    }),
+);
+syncLang();
 $("play").onclick = () => {
   if (exporting) return;
   state.paused = !state.paused;
@@ -331,18 +332,6 @@ $("play").onclick = () => {
     else void renderer.media.play();
   }
   changed();
-};
-$("copy").onclick = () =>
-  void navigator.clipboard
-    .writeText(code.value)
-    .then(() => notice("GLSL copiado."))
-    .catch(() =>
-      notice("Não foi possível copiar. Selecione o código no editor."),
-    );
-$("use-shader").onclick = () => {
-  state.source = "Shader";
-  void source();
-  ui.refresh();
 };
 $<HTMLInputElement>("compare").oninput = (e) => {
   state.compare = Number((e.target as HTMLInputElement).value);
@@ -354,7 +343,6 @@ updateLines();
 code.oninput = () => {
   updateLines();
   clearTimeout(debounce);
-  $("compile-status").textContent = "Compilando…";
   debounce = window.setTimeout(compile, 300);
 };
 code.onscroll = () => {
@@ -370,16 +358,6 @@ code.onkeydown = (e) => {
 $<HTMLInputElement>("media-file").onchange = (e) => {
   const input = e.target as HTMLInputElement;
   if (input.files?.[0]) void loadMedia(input.files[0]);
-  input.value = "";
-};
-$<HTMLInputElement>("preset-file").onchange = async (e) => {
-  const input = e.target as HTMLInputElement;
-  try {
-    if (input.files?.[0])
-      await apply(validate(JSON.parse(await input.files[0].text())));
-  } catch (err) {
-    notice(`Não foi possível importar: ${String(err)}`);
-  }
   input.value = "";
 };
 const drop = $("dropzone");
@@ -423,7 +401,7 @@ window.addEventListener("hashchange", () => {
   try {
     void apply(decode(location.hash.slice(1)));
   } catch (e) {
-    notice(`Link inválido: ${String(e)}`);
+    notice(t("Link inválido: {0}", e));
   }
 });
 window.addEventListener("beforeunload", () => {
@@ -434,7 +412,7 @@ buildUI();
 changed();
 if (state.source === "Webcam") void source();
 else if (["Imagem", "Vídeo"].includes(state.source)) {
-  notice("Reabra o arquivo local para usar a fonte deste preset.");
+  notice(t("Reabra o arquivo local para usar a fonte deste preset."));
 }
 let frames = 0,
   fps = 0,
@@ -445,15 +423,15 @@ function loop(now: number) {
   if (!exporting) {
     if (!state.paused) time += dt;
     renderer.render(time);
-    $("clock").textContent = `${time.toFixed(2)} s`;
     frames++;
-    if (now - sample >= 1000) {
+    if (now - sample >= 500) {
       fps = Math.round((frames * 1000) / (now - sample));
+      
       frames = 0;
       sample = now;
+      $("stats").textContent =
+        `${renderer.canvas.width} × ${renderer.canvas.height} · ${fps} fps`;
     }
-    $("stats").textContent =
-      `${renderer.canvas.width} × ${renderer.canvas.height} · ${fps} fps`;
   }
   requestAnimationFrame(loop);
 }

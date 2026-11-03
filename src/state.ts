@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { extensions } from "./effects/registry.generated";
 export const algorithms = [
   "Threshold",
@@ -42,7 +43,7 @@ export const palettes: Record<string, string[]> = {
   Personalizada: ["#101820", "#f2f0df"],
 };
 export const defaultCode = `// WebGL2 · uniforms: u_time, u_resolution, u_mouse, u_tex
-// Escreva a cor de saída em outColor.
+// Write the output color to outColor.
 void main() {
   vec2 uv = gl_FragCoord.xy / u_resolution;
   vec2 p = (uv - 0.5) * vec2(u_resolution.x/u_resolution.y, 1.0);
@@ -158,7 +159,7 @@ export function preset(name: string): State {
 }
 export function validate(value: unknown): State {
   if (!value || typeof value !== "object")
-    throw Error("Preset inválido: use um objeto JSON.");
+    throw Error(t("Preset inválido: use um objeto JSON."));
   const v = value as Record<string, unknown>;
   const s = structuredClone(defaults);
   for (const key of Object.keys(s) as (keyof State)[])
@@ -200,7 +201,7 @@ export function validate(value: unknown): State {
   if (!["Procedural", "Imagem", "Webcam", "Vídeo", "Shader"].includes(s.source))
     s.source = "Procedural";
   if (s.code.length > 100000)
-    throw Error("Shader muito grande. Limite: 100 mil caracteres.");
+    throw Error(t("Shader muito grande. Limite: 100 mil caracteres."));
   return s;
 }
 export function encode(s: State) {

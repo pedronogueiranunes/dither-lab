@@ -20,10 +20,11 @@ async function loadState(page: any, extra: Record<string, unknown> = {}) {
     JSON.stringify({ width: 480, aspect: 1.5, ...extra }),
   ).toString("base64");
   await page.goto("/#" + hash);
-  await expect(page.locator("#compile-status")).toHaveText("Compilado");
-  await expect(page.locator("#stats")).toContainText(
-    String(extra.width ?? 480) + " ×",
-  );
+  await expect
+    .poll(() =>
+      page.locator("canvas").evaluate((c: HTMLCanvasElement) => c.width),
+    )
+    .toBe(extra.width ?? 480);
 }
 async function colors(page: any) {
   return page.locator("canvas").evaluate((c: HTMLCanvasElement) => {
@@ -47,12 +48,16 @@ test("GPU, CPU worker, compilation recovery, responsive layout", async ({
   await page.screenshot({ path: "test-results/desktop.png", fullPage: true });
   for (const algorithm of algorithms) {
     await page
-      .getByRole("combobox", { name: "Algoritmo", exact: true })
+      .getByRole("combobox", { name: "Algorithm", exact: true })
       .selectOption({ label: algorithm });
     await page.waitForTimeout(150);
     await expect.poll(() => colors(page)).toBeGreaterThan(1);
   }
-  await page.locator("#use-shader").click();
+  await expect(page.locator("#editor")).toBeHidden();
+  await page
+    .getByRole("combobox", { name: "Input", exact: true })
+    .selectOption("Shader");
+  await expect(page.locator("#editor")).toBeVisible();
   const before = await page.locator("#code").inputValue();
   await page.locator("#code").fill("void main(){BROKEN;}");
   await expect(page.locator("#errors")).toBeVisible();
@@ -81,7 +86,8 @@ test("exports PNG, JPG, WebP, both SVG modes, GIF, ZIP, WebM and offline HTML", 
     "GIF",
     "ZIP",
     "WebM",
-    "Código HTML",
+    "HTML",
+    "JSON",
   ]) {
     const event = page.waitForEvent("download");
     await page
@@ -139,7 +145,7 @@ test("exports PNG, JPG, WebP, both SVG modes, GIF, ZIP, WebM and offline HTML", 
       expect(dimensions).toEqual([160, 107]);
     }
 
-    if (format === "Código HTML") {
+    if (format === "HTML") {
       const offline = await context.newPage();
       const errors: string[] = [];
       offline.on("pageerror", (e) => errors.push(e.message));
@@ -151,6 +157,25 @@ test("exports PNG, JPG, WebP, both SVG modes, GIF, ZIP, WebM and offline HTML", 
       await offline.close();
     }
   }
+  // Wallpapers: exact device size, PNG IHDR width/height at bytes 16–24.
+  for (const [name, size] of [
+    ["Phone wallpaper", [1179, 2556]],
+    ["Desktop wallpaper", [3840, 2160]],
+  ] as const) {
+    const event = page.waitForEvent("download");
+    await page.getByRole("button", { name, exact: true }).click();
+    const png = await readFile((await (await event).path())!);
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual(size);
+  }
+  await expect(page.locator("canvas")).toHaveJSProperty("width", 160);
+  // Language toggle relabels the panel and persists.
+  await page.getByRole("button", { name: "PT", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Copiar link" })).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("combobox", { name: "Algoritmo", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "EN", exact: true }).click();
   await loadState(page, {
     width: 160,
     algorithm: "Halftone",
@@ -185,7 +210,7 @@ test("image, video and webcam work with every algorithm", async ({ page }) => {
   const check = async () => {
     for (const algorithm of algorithms) {
       await page
-        .getByRole("combobox", { name: "Algoritmo", exact: true })
+        .getByRole("combobox", { name: "Algorithm", exact: true })
         .selectOption({ label: algorithm });
       await page.waitForTimeout(100);
       await expect.poll(() => colors(page)).toBeGreaterThan(1);
@@ -193,9 +218,9 @@ test("image, video and webcam work with every algorithm", async ({ page }) => {
   };
   await expect(
     page
-      .getByRole("combobox", { name: "Entrada", exact: true })
+      .getByRole("combobox", { name: "Input", exact: true })
       .locator("option:checked"),
-  ).toHaveText("Imagem");
+  ).toHaveText("Image");
   await check();
   const video = await page.evaluate(async () => {
     const c = document.createElement("canvas");
@@ -228,12 +253,12 @@ test("image, video and webcam work with every algorithm", async ({ page }) => {
   });
   await check();
   await page
-    .getByRole("combobox", { name: "Entrada", exact: true })
+    .getByRole("combobox", { name: "Input", exact: true })
     .selectOption({ label: "Webcam" });
   await page.waitForTimeout(400);
   await expect(
     page
-      .getByRole("combobox", { name: "Entrada", exact: true })
+      .getByRole("combobox", { name: "Input", exact: true })
       .locator("option:checked"),
   ).toHaveText("Webcam");
   await check();
@@ -277,7 +302,7 @@ test("Worker matches synchronous diffusion for every kernel and extension render
   });
   expect(result).toEqual([true, true, true, true, true]);
   await page
-    .getByRole("combobox", { name: "Algoritmo", exact: true })
+    .getByRole("combobox", { name: "Algorithm", exact: true })
     .selectOption({ label: "Posterize (exemplo)" });
   await expect.poll(() => colors(page)).toBeGreaterThan(1);
 });

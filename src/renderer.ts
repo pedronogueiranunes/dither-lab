@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { extensions } from "./effects/registry.generated";
 import { algorithms, cpuAlgorithms, type State } from "./state";
 import {
@@ -53,7 +54,9 @@ export class Renderer {
     });
     if (!gl)
       throw Error(
-        "Este navegador não oferece WebGL2. Abra em uma versão atual do Chrome, Firefox ou Safari.",
+        t(
+          "Este navegador não oferece WebGL2. Abra em uma versão atual do Chrome, Firefox ou Safari.",
+        ),
       );
     this.gl = gl;
     gl.bindVertexArray(gl.createVertexArray());
@@ -225,7 +228,9 @@ export class Renderer {
       0,
     );
     if (g.checkFramebufferStatus(g.FRAMEBUFFER) !== g.FRAMEBUFFER_COMPLETE)
-      throw Error("Não foi possível criar o framebuffer. Reduza a resolução.");
+      throw Error(
+        t("Não foi possível criar o framebuffer. Reduza a resolução."),
+      );
     return { texture, fbo, width, height };
   }
   resize() {

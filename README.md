@@ -27,11 +27,11 @@ Espaço: pausar/reproduzir. **S**: PNG. **R**: gravar WebM (novamente para cance
 - **JPG / WebP:** mesma escala da imagem PNG, via `canvas.toBlob`.
 - **MP4 / WebM:** `captureStream` + MediaRecorder, com duração/FPS configuráveis. Depende de suporte a WebM; oferecemos erro e GIF/ZIP quando indisponível.
 - **GIF / ZIP:** quadros determinísticos, avançando `u_time` manualmente e buscando a posição correspondente de vídeos. GIF tem precisão temporal de centésimos de segundo. ZIP contém PNGs numerados. Uma proteção limita o total a 400 milhões de pixels por exportação. Webcam ao vivo usa WebM.
-- **Código HTML:** um arquivo autossuficiente com renderer, algoritmos, parâmetros, shader e mídia incorporada; abre via `file://`, sem rede. Webcam é incorporada como imagem do momento. Preserva pausa/play do projeto. A difusão CPU usa a mesma implementação sequencial nesse HTML.
+- **HTML:** um arquivo autossuficiente com renderer, algoritmos, parâmetros, shader e mídia incorporada; abre via `file://`, sem rede. Webcam é incorporada como imagem do momento. Preserva pausa/play do projeto. A difusão CPU usa a mesma implementação sequencial nesse HTML.
 
 Exportações usam somente a saída processada, sem o slider de comparação. GIF/ZIP são determinísticos para geradores, shaders e arquivos; vídeos dependem da precisão de busca do decodificador do navegador. Shaders personalizados devem depender de `u_time` para animação determinística.
 
-Presets salvos no navegador, importação/exportação JSON e link compartilhável estão no painel. Imagens/vídeos não são incluídos nos presets/URLs: reabra o arquivo original. HTML exportado incorpora os arquivos e pode ficar grande.
+**Wallpaper celular** (1179 × 2556) e **Wallpaper PC** (3840 × 2160) exportam PNG no tamanho exato, ampliando por fator inteiro para manter os pixels nítidos. A interface abre em inglês; o seletor EN/PT no topo troca o idioma e fica salvo no navegador. **JSON** exporta o preset; para importar, abra ou arraste o `.json` como qualquer arquivo. **Copiar link** gera uma URL com o preset. O editor GLSL aparece com a fonte Shader. Imagens/vídeos não são incluídos nos presets/URLs: reabra o arquivo original. HTML exportado incorpora os arquivos e pode ficar grande.
 
 ## Adicionar efeito GPU
 
